@@ -7,9 +7,20 @@ interface OrderFormProps {
   whatsappNumber: string
   onOrderPlaced: () => void
   slotsLeft: number
+  variant?: "A" | "B"
 }
 
-export default function OrderForm({ whatsappNumber, onOrderPlaced, slotsLeft }: OrderFormProps) {
+function getCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined
+  const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"))
+  return match ? match[2] : undefined
+}
+
+function getEventId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+export default function OrderForm({ whatsappNumber, onOrderPlaced, slotsLeft, variant }: OrderFormProps) {
   const [qty, setQty] = useState<"1" | "2" | "3">("1")
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
@@ -40,6 +51,44 @@ _Order placed via PowerVolt NG landing page_`
     return encodeURIComponent(msg)
   }
 
+  async function firePurchaseEvents() {
+    const eventId = getEventId()
+    const eventSourceUrl = window.location.href
+    const contentName = variant === "B" ? "PowerVolt_Purchase_B" : "PowerVolt_Purchase_A"
+    const value = selectedOption.price
+
+    // 1. Browser pixel
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq(
+        "track",
+        "Purchase",
+        { value, currency: "NGN", content_name: contentName },
+        { eventID: eventId }
+      )
+    }
+
+    // 2. CAPI (server-side)
+    try {
+      await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventName: "Purchase",
+          eventId,
+          eventSourceUrl,
+          contentName,
+          value,
+          currency: "NGN",
+          phone: phone.trim(),
+          fbp: getCookie("_fbp"),
+          fbc: getCookie("_fbc"),
+        }),
+      })
+    } catch (err) {
+      console.error("[Purchase CAPI] Failed:", err)
+    }
+  }
+
   async function handleSubmit() {
     if (!name.trim() || !phone.trim() || !address.trim() || !state) {
       setError("Please fill in all delivery details to complete your order.")
@@ -51,6 +100,9 @@ _Order placed via PowerVolt NG landing page_`
     }
     setError("")
     setLoading(true)
+
+    await firePurchaseEvents()
+
     await new Promise((r) => setTimeout(r, 800))
     const cleaned = whatsappNumber.replace(/\D/g, "")
     const intl = cleaned.startsWith("0") ? "234" + cleaned.slice(1) : cleaned
@@ -173,7 +225,6 @@ _Order placed via PowerVolt NG landing page_`
         }
       `}</style>
 
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: "#ea580c", display: "block", marginBottom: 8 }}>
           🛒 Secure Your Slot
@@ -186,7 +237,6 @@ _Order placed via PowerVolt NG landing page_`
         </p>
       </div>
 
-      {/* Live scarcity notice */}
       <div style={{
         background: "rgba(234,88,12,0.1)", border: "1px solid rgba(234,88,12,0.25)",
         borderRadius: 12, padding: "11px 14px",
@@ -213,7 +263,6 @@ _Order placed via PowerVolt NG landing page_`
         </div>
       ) : (
         <>
-          {/* Quantity selector */}
           <div style={{ marginBottom: 24 }}>
             <label className="form-label">Choose Your Package</label>
             {PRICE_OPTIONS.map((opt) => (
@@ -249,7 +298,6 @@ _Order placed via PowerVolt NG landing page_`
             ))}
           </div>
 
-          {/* Form fields */}
           <div style={{ display: "flex", flexDirection: "column" as const, gap: 16, marginBottom: 22 }}>
             <div>
               <label className="form-label">Full Name</label>
@@ -280,7 +328,6 @@ _Order placed via PowerVolt NG landing page_`
             </div>
           </div>
 
-          {/* Guarantees */}
           <div style={{
             background: "rgba(255,255,255,0.04)", borderRadius: 14,
             padding: "14px 16px", marginBottom: 22,
@@ -306,7 +353,7 @@ _Order placed via PowerVolt NG landing page_`
             disabled={loading}
           >
             {loading ? (
-              <>⏳ Opening WhatsApp…</>
+              <>⏳ Processing…</>
             ) : slotsLeft === 0 ? (
               <>📋 Join Tomorrow's Waitlist</>
             ) : (

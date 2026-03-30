@@ -126,6 +126,14 @@ const PRODUCT_IMAGES = [
   { src: "https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/chargewithsolar.png", alt: "Power Station charging" },
 ]
 
+const BOXIFY_IMAGES = {
+  logo: "https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/boxifylogo.jpeg",
+  packingStaff: "https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/boxifyimg2.jpeg",
+  ladiesPacking: "https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/boxpeepsjpeg.jpeg",
+  riders: "https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/boxifyarranged.jpeg",
+  office: "https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/boxify1mg3.jpeg",
+}
+
 const TOTAL_SLOTS = 5
 const STORAGE_KEY = "pvng_slots"
 
@@ -141,9 +149,10 @@ function getBusinessDayKey(): string {
 
 interface LandingPageProps {
   whatsappNumber: string
+  variant?: "A" | "B"
 }
 
-export default function LandingPage({ whatsappNumber }: LandingPageProps) {
+export default function LandingPage({ whatsappNumber, variant }: LandingPageProps) {
   const [heroIndex, setHeroIndex] = useState(0)
   const [heroAnim, setHeroAnim] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -205,6 +214,39 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
   const slide = HERO_SLIDES[heroIndex]
   const scrollToOrder = () => orderRef.current?.scrollIntoView({ behavior: "smooth" })
 
+  async function fireLeadEvent() {
+    const eventId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    const eventSourceUrl = window.location.href
+
+    // Browser pixel
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq("track", "Lead", { content_name: "PowerVolt_ClaimSocket" }, { eventID: eventId })
+    }
+
+    // CAPI
+    try {
+      await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventName: "Lead",
+          eventId,
+          eventSourceUrl,
+          contentName: "PowerVolt_ClaimSocket",
+          fbp: document.cookie.match(/(^| )_fbp=([^;]+)/)?.[2],
+          fbc: document.cookie.match(/(^| )_fbc=([^;]+)/)?.[2],
+        }),
+      })
+    } catch (err) {
+      console.error("[Lead CAPI] Failed:", err)
+    }
+  }
+
+  async function handleClaimSocket() {
+    await fireLeadEvent()
+    scrollToOrder()
+  }
+
   return (
     <main className="landing-root">
       <style>{`
@@ -247,43 +289,41 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
         .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: blink 2s infinite; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
 
-        /* Hero content above image */
         .hero-content-top {
           position: relative; z-index: 10;
-          padding: 28px 20px 20px;
+          padding: 24px 20px 18px;
         }
         .hero-slide-badge {
           display: inline-flex; align-items: center; gap: 6px;
           background: rgba(234,88,12,0.15); border: 1px solid rgba(234,88,12,0.3);
           border-radius: 20px; padding: 6px 14px;
           font-size: 12px; font-weight: 600; color: #fdba74;
-          margin-bottom: 16px; transition: opacity 0.4s;
+          margin-bottom: 14px; transition: opacity 0.4s;
         }
         .hero-slide-badge.fading { opacity: 0; }
         .hero-h1 {
           font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
-          font-size: clamp(34px, 10vw, 46px);
+          font-size: clamp(32px, 9.5vw, 44px);
           font-weight: 700; line-height: 1.08; letter-spacing: -1px; color: #fff;
           transition: opacity 0.4s, transform 0.4s;
         }
         .hero-h1.fading { opacity: 0; transform: translateY(10px); }
         .hero-highlight {
           font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
-          font-size: clamp(34px, 10vw, 46px);
+          font-size: clamp(32px, 9.5vw, 44px);
           font-weight: 700; line-height: 1.08; letter-spacing: -1px;
           background: linear-gradient(90deg, #ea580c, #f97316);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-          margin-bottom: 14px; transition: opacity 0.4s, transform 0.4s;
+          margin-bottom: 12px; transition: opacity 0.4s, transform 0.4s;
         }
         .hero-highlight.fading { opacity: 0; transform: translateY(10px); }
         .hero-desc {
-          font-size: 15px; font-weight: 400;
-          color: rgba(255,255,255,0.75); line-height: 1.75;
-          margin-bottom: 22px; transition: opacity 0.4s;
+          font-size: 14px; font-weight: 400;
+          color: rgba(255,255,255,0.72); line-height: 1.7;
+          margin-bottom: 0; transition: opacity 0.4s;
         }
         .hero-desc.fading { opacity: 0; }
 
-        /* Hero image — on page, not background */
         .hero-image-wrap {
           position: relative;
           width: 100%;
@@ -298,24 +338,22 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
           background: linear-gradient(to top, #080e1a, transparent);
           pointer-events: none;
         }
-        .hero-image-fade {
-          transition: opacity 0.5s ease;
-        }
+        .hero-image-fade { transition: opacity 0.5s ease; }
         .hero-image-fade.fading { opacity: 0; }
 
-        /* Hero content below image */
         .hero-content-bottom {
           padding: 0 20px 28px;
           position: relative; z-index: 10;
-          margin-top: -32px;
+          margin-top: -28px;
         }
-        .hero-cta-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .hero-cta-row { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
         .btn-primary {
           background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff;
           font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
           padding: 15px 24px; border: none; border-radius: 12px; cursor: pointer;
           display: flex; align-items: center; justify-content: center; gap: 8px;
           box-shadow: 0 8px 28px rgba(234,88,12,0.45); transition: transform 0.15s, box-shadow 0.15s;
+          letter-spacing: 0.01em;
         }
         .btn-primary:active { transform: scale(0.97); }
         .btn-ghost {
@@ -329,14 +367,14 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
           border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
           overflow: hidden; backdrop-filter: blur(8px);
         }
-        .stat-item { flex: 1; padding: 13px 10px; text-align: center; }
+        .stat-item { flex: 1; padding: 12px 8px; text-align: center; }
         .stat-item + .stat-item { border-left: 1px solid rgba(255,255,255,0.08); }
         .stat-val {
           font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
-          font-size: 17px; font-weight: 700; color: #ea580c; line-height: 1; margin-bottom: 4px;
+          font-size: 16px; font-weight: 700; color: #ea580c; line-height: 1; margin-bottom: 4px;
         }
-        .stat-lbl { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.07em; }
-        .hero-dots { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 20px 0 4px; }
+        .stat-lbl { font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.07em; }
+        .hero-dots { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 18px 0 2px; }
         .hero-dot { height: 3px; border-radius: 2px; background: rgba(255,255,255,0.25); transition: all 0.4s; cursor: pointer; }
         .hero-dot.active { width: 24px; background: #ea580c; }
         .hero-dot:not(.active) { width: 8px; }
@@ -344,50 +382,82 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
         /* ── PAIN BAR ── */
         .pain-bar {
           background: linear-gradient(135deg, #150800, #0d0518);
-          border-top: 1px solid rgba(234,88,12,0.2); border-bottom: 1px solid rgba(82,8,212,0.2);
-          padding: 24px 20px;
+          border-top: 1px solid rgba(234,88,12,0.2);
+          border-bottom: 1px solid rgba(82,8,212,0.2);
+          padding: 28px 20px;
         }
-        .pain-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.13em; color: #ea580c; margin-bottom: 16px; }
-        .pain-items { display: flex; flex-direction: column; gap: 12px; }
-        .pain-item { display: flex; align-items: flex-start; gap: 12px; font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.82); line-height: 1.6; }
-        .pain-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
-        .pain-callout { margin-top: 18px; padding: 14px 16px; background: rgba(234,88,12,0.1); border-radius: 12px; border: 1px solid rgba(234,88,12,0.22); font-size: 15px; font-weight: 600; color: #fdba74; line-height: 1.65; }
+        .pain-label {
+          font-size: 10px; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.14em; color: #ea580c; margin-bottom: 16px;
+        }
+        .pain-items { display: flex; flex-direction: column; gap: 11px; }
+        .pain-item {
+          display: flex; align-items: flex-start; gap: 11px;
+          font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.8); line-height: 1.6;
+        }
+        .pain-icon { font-size: 15px; flex-shrink: 0; margin-top: 2px; }
+        .pain-callout {
+          margin-top: 18px; padding: 14px 16px;
+          background: rgba(234,88,12,0.1); border-radius: 12px;
+          border: 1px solid rgba(234,88,12,0.22);
+          font-size: 14px; font-weight: 600; color: #fdba74; line-height: 1.65;
+        }
 
-        /* ── SECTIONS ── */
-        .section { padding: 52px 20px; }
-        .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: #ea580c; margin-bottom: 10px; }
+        /* ── SHARED SECTION STYLES ── */
+        .section { padding: 48px 20px; }
+        .section-label {
+          font-size: 10px; font-weight: 700; text-transform: uppercase;
+          letter-spacing: 0.14em; color: #ea580c; margin-bottom: 10px;
+          display: block;
+        }
         .section-title {
           font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
-          font-size: clamp(26px, 7.5vw, 34px); font-weight: 700;
-          line-height: 1.15; letter-spacing: -0.5px; margin-bottom: 10px; color: #fff;
+          font-size: clamp(24px, 7vw, 32px); font-weight: 700;
+          line-height: 1.18; letter-spacing: -0.5px; margin-bottom: 10px; color: #fff;
         }
-        .section-sub { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.68); line-height: 1.75; margin-bottom: 28px; }
+        .section-sub {
+          font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.62);
+          line-height: 1.75; margin-bottom: 24px;
+        }
 
-        /* ── ICP SECTION ── */
+        /* ── ICP ── */
         .icp-section { background: linear-gradient(180deg, #080e1a 0%, #0c0820 100%); }
-        .icp-grid { display: flex; flex-direction: column; gap: 16px; }
-        .icp-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 20px; overflow: hidden; }
+        .icp-grid { display: flex; flex-direction: column; gap: 14px; }
+        .icp-card {
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 18px; overflow: hidden;
+        }
         .icp-image-wrap { width: 100%; background: #0d1520; }
-        .icp-body { padding: 18px 18px 20px; }
+        .icp-body { padding: 16px 16px 18px; }
         .icp-role-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .icp-emoji { font-size: 20px; }
-        .icp-role { font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; }
-        .icp-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 12px 0; }
+        .icp-emoji { font-size: 19px; }
+        .icp-role {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 16px; font-weight: 700;
+        }
+        .icp-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 10px 0; }
         .icp-pain-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #f87171; margin-bottom: 5px; }
-        .icp-pain { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.65); line-height: 1.65; margin-bottom: 14px; }
+        .icp-pain { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.62); line-height: 1.65; margin-bottom: 12px; }
         .icp-benefit-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #34d399; margin-bottom: 5px; }
-        .icp-benefit { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.88); line-height: 1.65; }
+        .icp-benefit { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.88); line-height: 1.65; }
 
         /* ── WHAT IT POWERS ── */
         .powers-section { background: linear-gradient(180deg, #0c0820 0%, #080e1a 100%); }
-        .powers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .power-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 14px; padding: 16px 14px; display: flex; flex-direction: column; gap: 4px; }
-        .power-icon { font-size: 24px; margin-bottom: 6px; }
-        .power-item { font-size: 14px; font-weight: 600; color: #fff; }
-        .power-watts { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 1px; }
-        .power-hours { font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; color: #ea580c; margin-top: 4px; }
+        .powers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+        .power-card {
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 13px; padding: 15px 13px;
+          display: flex; flex-direction: column; gap: 3px;
+        }
+        .power-icon { font-size: 22px; margin-bottom: 5px; }
+        .power-item { font-size: 13px; font-weight: 600; color: #fff; }
+        .power-watts { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.4); margin-top: 1px; }
+        .power-hours {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 14px; font-weight: 700; color: #ea580c; margin-top: 4px;
+        }
 
-        /* ── FREE SOCKET BONUS ── */
+        /* ── BONUS ── */
         .bonus-section {
           background: linear-gradient(135deg, #0f1a08, #080e1a);
           border-top: 1px solid rgba(134,197,94,0.15);
@@ -403,108 +473,243 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
         }
         .bonus-title {
           font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
-          font-size: clamp(24px, 7vw, 30px); font-weight: 700;
+          font-size: clamp(22px, 6.5vw, 28px); font-weight: 700;
           color: #fff; line-height: 1.2; margin-bottom: 10px;
         }
         .bonus-title span { color: #86efac; }
-        .bonus-sub { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.68); line-height: 1.75; margin-bottom: 24px; }
+        .bonus-sub { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.65); line-height: 1.75; margin-bottom: 22px; }
         .bonus-image-wrap {
           background: #0d1a10;
           border: 1px solid rgba(134,197,94,0.15);
-          border-radius: 18px;
+          border-radius: 16px;
           overflow: hidden;
         }
-        .bonus-cta-row { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
-        .bonus-cta-text { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.55); line-height: 1.5; }
-        .bonus-cta-text strong { color: #86efac; }
+        .bonus-cta-row { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
 
-        /* ── HOW TO CHARGE ── */
+        /* ── CHARGE ── */
         .charge-section { background: linear-gradient(180deg, #080e1a 0%, #0c0d22 100%); }
-        .charge-cards { display: flex; flex-direction: column; gap: 12px; }
-        .charge-card { display: flex; align-items: flex-start; gap: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 18px; }
-        .charge-icon-wrap { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-        .charge-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 5px; }
-        .charge-desc { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.68); line-height: 1.65; }
-        .charge-time { font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: #ea580c; margin-top: 8px; }
+        .charge-cards { display: flex; flex-direction: column; gap: 11px; }
+        .charge-card {
+          display: flex; align-items: flex-start; gap: 13px;
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 15px; padding: 17px;
+        }
+        .charge-icon-wrap {
+          width: 44px; height: 44px; border-radius: 11px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 20px; flex-shrink: 0;
+        }
+        .charge-title { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .charge-desc { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.65); line-height: 1.65; }
+        .charge-time {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 12px; font-weight: 700; color: #ea580c; margin-top: 7px;
+        }
 
         /* ── SPECS ── */
         .specs-section { background: #080e1a; }
-        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .spec-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; padding: 16px 14px; }
-        .spec-label { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
-        .spec-value { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.35; }
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+        .spec-card {
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 11px; padding: 14px 13px;
+        }
+        .spec-label {
+          font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.4);
+          text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px;
+        }
+        .spec-value { font-size: 13px; font-weight: 700; color: #fff; line-height: 1.35; }
 
         /* ── TESTIMONIALS ── */
         .testimonials-section { background: linear-gradient(180deg, #080e1a 0%, #0c0d22 100%); }
-        .testimonial-cards { display: flex; flex-direction: column; gap: 14px; }
-        .testimonial-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 18px; padding: 20px; }
-        .testimonial-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .testimonial-cards { display: flex; flex-direction: column; gap: 12px; }
+        .testimonial-card {
+          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 16px; padding: 18px;
+        }
+        .testimonial-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
         .testimonial-name { font-size: 14px; font-weight: 700; color: #fff; }
-        .testimonial-location { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.5); margin-top: 2px; }
-        .testimonial-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 9px; border-radius: 20px; background: rgba(82,8,212,0.2); border: 1px solid rgba(82,8,212,0.3); color: #a78bfa; white-space: nowrap; }
-        .testimonial-stars { color: #f59e0b; font-size: 14px; margin-bottom: 10px; }
-        .testimonial-text { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.82); line-height: 1.75; }
+        .testimonial-location { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 2px; }
+        .testimonial-tag {
+          font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+          padding: 4px 9px; border-radius: 20px;
+          background: rgba(82,8,212,0.2); border: 1px solid rgba(82,8,212,0.3); color: #a78bfa;
+          white-space: nowrap; flex-shrink: 0;
+        }
+        .testimonial-stars { color: #f59e0b; font-size: 13px; margin-bottom: 9px; }
+        .testimonial-text { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.8); line-height: 1.75; }
+
+        /* ── DELIVERY TRUST ── */
+        .delivery-trust-section {
+          background: linear-gradient(180deg, #0c0d22 0%, #080e1a 100%);
+          padding: 48px 20px;
+          border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .trust-partner-header {
+          display: flex; align-items: center; gap: 14px;
+          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+          border-radius: 16px; padding: 16px; margin-bottom: 20px;
+        }
+        .trust-partner-logo {
+          width: 68px; height: 68px; border-radius: 11px;
+          background: #fff; overflow: hidden; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .trust-partner-name {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px;
+        }
+        .trust-partner-tagline {
+          font-size: 12px; font-weight: 400;
+          color: rgba(255,255,255,0.5); line-height: 1.55;
+        }
+        .trust-human-statement {
+          background: linear-gradient(135deg, rgba(234,88,12,0.09), rgba(82,8,212,0.09));
+          border: 1px solid rgba(234,88,12,0.2);
+          border-radius: 16px; padding: 20px; margin-bottom: 20px; text-align: center;
+        }
+        .trust-human-emoji { font-size: 30px; margin-bottom: 10px; }
+        .trust-human-title {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 8px; line-height: 1.25;
+        }
+        .trust-human-desc {
+          font-size: 13px; font-weight: 400;
+          color: rgba(255,255,255,0.65); line-height: 1.75;
+        }
+        .trust-images-grid {
+          display: grid; grid-template-columns: 1fr 1fr;
+          gap: 9px; margin-bottom: 20px;
+        }
+        .trust-img-card {
+          border-radius: 13px; overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.08); background: #0d1520;
+        }
+        .trust-img-card.full-width { grid-column: 1 / -1; }
+        .trust-caption {
+          font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.35);
+          text-transform: uppercase; letter-spacing: 0.08em;
+          text-align: center; padding: 7px 8px 8px;
+        }
+        .trust-promise-list { display: flex; flex-direction: column; gap: 10px; }
+        .trust-promise-item {
+          display: flex; align-items: flex-start; gap: 11px;
+          font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75); line-height: 1.6;
+        }
+        .trust-promise-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
 
         /* ── GUARANTEE ── */
         .guarantee-section {
           background: linear-gradient(135deg, #051a0f, #080e1a);
           border-top: 1px solid rgba(34,197,94,0.15);
           border-bottom: 1px solid rgba(34,197,94,0.15);
-          padding: 40px 20px;
-          text-align: center;
+          padding: 40px 20px; text-align: center;
         }
-        .guarantee-badge { width: 80px; height: 80px; border-radius: 50%; background: rgba(34,197,94,0.12); border: 2px solid rgba(34,197,94,0.35); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 20px; }
-        .guarantee-title { font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 10px; }
-        .guarantee-sub { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.68); line-height: 1.75; margin-bottom: 24px; }
-        .guarantee-items { display: flex; flex-direction: column; gap: 12px; text-align: left; }
-        .guarantee-item-row { display: flex; align-items: flex-start; gap: 12px; }
-        .guarantee-check { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
-        .guarantee-item-text { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.78); line-height: 1.6; }
+        .guarantee-badge {
+          width: 76px; height: 76px; border-radius: 50%;
+          background: rgba(34,197,94,0.12); border: 2px solid rgba(34,197,94,0.35);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 34px; margin: 0 auto 18px;
+        }
+        .guarantee-title {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 10px;
+        }
+        .guarantee-sub { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.65); line-height: 1.75; margin-bottom: 22px; }
+        .guarantee-items { display: flex; flex-direction: column; gap: 11px; text-align: left; }
+        .guarantee-item-row { display: flex; align-items: flex-start; gap: 11px; }
+        .guarantee-check { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+        .guarantee-item-text { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75); line-height: 1.6; }
 
-        /* ── SCARCITY BANNER ── */
-        .scarcity-wrap { padding: 48px 20px 0; }
-        .scarcity-banner { background: linear-gradient(135deg, rgba(234,88,12,0.14), rgba(82,8,212,0.14)); border: 1px solid rgba(234,88,12,0.3); border-radius: 18px; padding: 22px 20px; text-align: center; }
-        .scarcity-fire { font-size: 30px; margin-bottom: 10px; }
-        .scarcity-title { font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-        .scarcity-sub { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.68); margin-bottom: 16px; line-height: 1.7; }
-        .units-left { display: inline-flex; align-items: center; gap: 8px; background: rgba(234,88,12,0.18); border: 1px solid rgba(234,88,12,0.38); border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 700; color: #fdba74; margin-bottom: 16px; }
-        .unit-dot { width: 8px; height: 8px; border-radius: 50%; background: #ea580c; animation: blink 1s infinite; }
-        .slots-wrap { margin: 16px 0; }
-        .slots-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
-        .slots-label-left { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.75); }
-        .slots-label-right { font-size: 13px; font-weight: 700; color: #ea580c; }
+        /* ── SCARCITY ── */
+        .scarcity-wrap { padding: 44px 20px 0; }
+        .scarcity-banner {
+          background: linear-gradient(135deg, rgba(234,88,12,0.13), rgba(82,8,212,0.13));
+          border: 1px solid rgba(234,88,12,0.28); border-radius: 18px;
+          padding: 22px 20px; text-align: center;
+        }
+        .scarcity-fire { font-size: 28px; margin-bottom: 10px; }
+        .scarcity-title {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 8px;
+        }
+        .scarcity-sub { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.65); margin-bottom: 14px; line-height: 1.7; }
+        .units-left {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: rgba(234,88,12,0.18); border: 1px solid rgba(234,88,12,0.38);
+          border-radius: 10px; padding: 8px 14px;
+          font-size: 13px; font-weight: 700; color: #fdba74; margin-bottom: 14px;
+        }
+        .unit-dot { width: 7px; height: 7px; border-radius: 50%; background: #ea580c; animation: blink 1s infinite; }
+        .slots-wrap { margin: 14px 0; }
+        .slots-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .slots-label-left { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7); }
+        .slots-label-right { font-size: 12px; font-weight: 700; color: #ea580c; }
         .slots-track { display: flex; gap: 5px; }
-        .slot-block { flex: 1; height: 8px; border-radius: 4px; transition: background 0.4s; }
+        .slot-block { flex: 1; height: 7px; border-radius: 4px; transition: background 0.4s; }
         .slot-block.taken { background: #ea580c; }
-        .slot-block.available { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.08); }
-        .slots-sub { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 7px; text-align: center; }
+        .slot-block.available { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.07); }
+        .slots-sub { font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.4); margin-top: 6px; text-align: center; }
 
         /* ── ORDER SECTION ── */
-        .order-section { padding: 52px 20px; background: #080e1a; }
-        .order-intro-text { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.62); margin-bottom: 24px; line-height: 1.75; }
+        .order-section { padding: 48px 20px; background: #080e1a; }
+        .order-intro-text { font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.6); margin-bottom: 22px; line-height: 1.75; }
 
         /* ── FAQ ── */
         .faq-section { background: linear-gradient(180deg, #0c0d22 0%, #080e1a 100%); }
-        .faq-item { border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .faq-q { width: 100%; background: none; border: none; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 600; text-align: left; padding: 18px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; line-height: 1.5; }
+        .faq-item { border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .faq-q {
+          width: 100%; background: none; border: none; color: #fff;
+          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 600;
+          text-align: left; padding: 17px 0;
+          display: flex; justify-content: space-between; align-items: center; gap: 12px;
+          cursor: pointer; line-height: 1.5;
+        }
         .faq-chevron { font-size: 20px; color: #ea580c; flex-shrink: 0; transition: transform 0.25s; }
         .faq-chevron.open { transform: rotate(45deg); }
-        .faq-a { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.68); line-height: 1.8; padding-bottom: 18px; max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .faq-a {
+          font-size: 14px; font-weight: 400; color: rgba(255,255,255,0.65);
+          line-height: 1.8; padding-bottom: 17px;
+          max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+        }
         .faq-a.open { max-height: 320px; }
 
         /* ── FOOTER ── */
-        .footer { background: #040709; border-top: 1px solid rgba(255,255,255,0.07); padding: 30px 20px; text-align: center; }
-        .footer-logo { font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+        .footer {
+          background: #040709; border-top: 1px solid rgba(255,255,255,0.07);
+          padding: 28px 20px; text-align: center;
+        }
+        .footer-logo {
+          font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif;
+          font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;
+        }
         .footer-logo span { color: #ea580c; }
-        .footer-text { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.42); line-height: 1.8; }
+        .footer-text { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.38); line-height: 1.85; }
 
         /* ── STICKY CTA ── */
-        .sticky-cta { position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(to top, rgba(8,14,26,1) 0%, rgba(8,14,26,0.96) 100%); border-top: 1px solid rgba(234,88,12,0.2); padding: 12px 20px 18px; transform: translateY(100%); transition: transform 0.3s ease; max-width: 480px; margin: 0 auto; }
+        .sticky-cta {
+          position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+          background: linear-gradient(to top, rgba(8,14,26,1) 0%, rgba(8,14,26,0.96) 100%);
+          border-top: 1px solid rgba(234,88,12,0.2);
+          padding: 12px 20px 18px;
+          transform: translateY(100%); transition: transform 0.3s ease;
+          max-width: 480px; margin: 0 auto;
+        }
         .sticky-cta.visible { transform: translateY(0); }
-        .sticky-cta-btn { width: 100%; background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; padding: 15px; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 6px 24px rgba(234,88,12,0.45); }
-        .sticky-price { text-align: center; font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.45); margin-top: 7px; }
+        .sticky-cta-btn {
+          width: 100%; background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff;
+          font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700;
+          padding: 15px; border: none; border-radius: 12px; cursor: pointer;
+          box-shadow: 0 6px 24px rgba(234,88,12,0.45);
+        }
+        .sticky-price {
+          text-align: center; font-size: 11px; font-weight: 400;
+          color: rgba(255,255,255,0.4); margin-top: 7px;
+        }
         .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0 20px; }
-        .img-card { background: #0d1520; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; width: 100%; }
+        .img-card {
+          background: #0d1520; border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 15px; overflow: hidden; width: 100%;
+        }
       `}</style>
 
       {/* ── HERO ── */}
@@ -513,30 +718,21 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
           <div className="hero-logo">Power<span>Volt</span> NG</div>
           <div className="trust-pill"><div className="trust-dot" />2,400+ Sold</div>
         </div>
-
-        {/* Text above image */}
         <div className="hero-content-top">
           <div className={`hero-slide-badge ${heroAnim ? "fading" : ""}`}>{slide.badge}</div>
           <div className={`hero-h1 ${heroAnim ? "fading" : ""}`}>{slide.title}</div>
           <div className={`hero-highlight ${heroAnim ? "fading" : ""}`}>{slide.highlight}</div>
           <p className={`hero-desc ${heroAnim ? "fading" : ""}`}>{slide.desc}</p>
         </div>
-
-        {/* Image on page — not background */}
         <div className="hero-image-wrap">
           <Image
-            src={slide.img}
-            alt={slide.title}
-            width={1200}
-            height={800}
+            src={slide.img} alt={slide.title}
+            width={1200} height={800}
             className={`hero-image-fade ${heroAnim ? "fading" : ""}`}
             style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }}
-            priority
-            sizes="480px"
+            priority sizes="480px"
           />
         </div>
-
-        {/* CTAs and stats below image */}
         <div className="hero-content-bottom">
           <div className="hero-cta-row">
             <button className="btn-primary" onClick={scrollToOrder}>{slide.cta} →</button>
@@ -577,10 +773,10 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
         </div>
       </div>
 
-      {/* ── WHO IT'S FOR (ICP CARDS) ── */}
+      {/* ── WHO IT'S FOR ── */}
       <section className="section icp-section">
         <p className="section-label">👥 Who It's For</p>
-        <h2 className="section-title">This Is Built For You If…</h2>
+        <h2 className="section-title">Built For You If You Own a Shop, Work Online, or Have a Family That Hates Generator Noise</h2>
         <p className="section-sub">See exactly how the PowerVolt solves your specific situation.</p>
         <div className="icp-grid">
           {ICP_CARDS.map((icp) => (
@@ -624,7 +820,7 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
       </section>
 
       {/* ── PRODUCT IMAGES ── */}
-      <div style={{ background: "#080e1a", padding: "0 20px 52px", display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ background: "#080e1a", padding: "0 20px 48px", display: "flex", flexDirection: "column", gap: 12 }}>
         {PRODUCT_IMAGES.map((img) => (
           <div key={img.src} className="img-card">
             <Image src={img.src} alt={img.alt} width={1200} height={900}
@@ -637,29 +833,25 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
       {/* ── FREE SOCKET BONUS ── */}
       <div className="bonus-section">
         <div className="bonus-badge">🎁 Limited Bonus</div>
-        <h2 className="bonus-title">
-          Free Extension Socket —<br /><span>This Batch Only</span>
-        </h2>
+        <h2 className="bonus-title">Free Extension Socket —<br /><span>This Batch Only</span></h2>
         <p className="bonus-sub">
           We're including a free extension socket with every unit while stocks last. Once this batch is gone, the bonus goes with it.
         </p>
         <div className="bonus-image-wrap">
           <Image
             src="https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/free_socketreal.png"
-            alt="Free extension socket bonus"
-            width={1200}
-            height={900}
+            alt="Free extension socket bonus" width={1200} height={900}
             style={{ width: "100%", height: "auto", display: "block", objectFit: "contain" }}
             sizes="440px"
           />
         </div>
         <div className="bonus-cta-row">
-          <button className="btn-primary" style={{ flex: 1 }} onClick={scrollToOrder}>
+          <button className="btn-primary" style={{ flex: 1 }} onClick={handleClaimSocket}>
             Claim My Free Socket →
           </button>
         </div>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 10, lineHeight: 1.6 }}>
-          <strong style={{ color: "#86efac" }}>Available on all 3 packages.</strong> Every order — 1, 2, or 3 units — includes the free socket bonus automatically.
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 10, lineHeight: 1.65 }}>
+          <strong style={{ color: "#86efac" }}>Available on all 3 packages.</strong> Every order — 1, 2, or 3 units — includes the free socket automatically.
         </p>
       </div>
 
@@ -680,7 +872,7 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
             </div>
           ))}
         </div>
-        <div className="img-card" style={{ marginTop: 24 }}>
+        <div className="img-card" style={{ marginTop: 22 }}>
           <Image src="https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/rechargeable_specreal.png"
             alt="How to charge" width={1200} height={900}
             style={{ width: "100%", height: "auto", display: "block", objectFit: "contain" }}
@@ -727,6 +919,106 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
         </div>
       </section>
 
+      {/* ── DELIVERY TRUST ── */}
+      <section className="delivery-trust-section">
+        <p className="section-label">🚚 Fulfilled By</p>
+        <h2 className="section-title">Real People.<br />Real Delivery.</h2>
+        <p className="section-sub">
+          Your order isn't handled by a bot or passed to a random courier. We partner with{" "}
+          <strong style={{ color: "#fff" }}>Boxify Logistics</strong> — a registered Nigerian
+          logistics company whose dedicated team personally handles every PowerVolt shipment.
+        </p>
+
+        {/* Partner logo card */}
+        <div className="trust-partner-header">
+          <div className="trust-partner-logo">
+            <Image
+              src={BOXIFY_IMAGES.logo}
+              alt="Boxify Logistics"
+              width={68} height={68}
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </div>
+          <div>
+            <div className="trust-partner-name">Boxify Logistics</div>
+            <div className="trust-partner-tagline">
+              Xpress Delivery · Nationwide Shipment<br />
+              Warehousing &amp; Fulfillment · Abuja
+            </div>
+          </div>
+        </div>
+
+        {/* Human conviction statement */}
+        <div className="trust-human-statement">
+          <div className="trust-human-emoji">👐</div>
+          <div className="trust-human-title">Actual humans pack and send your order</div>
+          <div className="trust-human-desc">
+            Every unit is physically inspected, carefully packed, and handed to a named rider
+            who carries it to your door. You're not a ticket number — you're a customer with a name.
+          </div>
+        </div>
+
+        {/* Staff photo grid */}
+        <div className="trust-images-grid">
+          <div className="trust-img-card">
+            <Image
+              src={BOXIFY_IMAGES.packingStaff}
+              alt="Boxify staff packing orders"
+              width={600} height={450}
+              style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }}
+              sizes="220px"
+            />
+            <div className="trust-caption">Packing your order</div>
+          </div>
+          <div className="trust-img-card">
+            <Image
+              src={BOXIFY_IMAGES.ladiesPacking}
+              alt="Boxify team processing orders"
+              width={600} height={450}
+              style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }}
+              sizes="220px"
+            />
+            <div className="trust-caption">Order processing</div>
+          </div>
+          <div className="trust-img-card full-width">
+            <Image
+              src={BOXIFY_IMAGES.riders}
+              alt="Boxify dispatch riders"
+              width={1200} height={800}
+              style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }}
+              sizes="440px"
+            />
+            <div className="trust-caption">Dispatch riders — ready to bring your order to your door</div>
+          </div>
+          <div className="trust-img-card full-width">
+            <Image
+              src={BOXIFY_IMAGES.office}
+              alt="Boxify Logistics office, Abuja"
+              width={1200} height={800}
+              style={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }}
+              sizes="440px"
+            />
+            <div className="trust-caption">Boxify Logistics HQ — Garki, Abuja</div>
+          </div>
+        </div>
+
+        {/* Promise list */}
+        <div className="trust-promise-list">
+          {[
+            ["📦", "Every order is physically inspected before dispatch"],
+            ["🧍", "A real team member confirms your order on WhatsApp before it ships"],
+            ["🏍️", "Named Boxify riders deliver door-to-door in Lagos & Abuja"],
+            ["📍", "Track your delivery via WhatsApp — no app, no stress"],
+            ["🕐", "2–5 business days to all 36 states in Nigeria"],
+          ].map(([icon, text]) => (
+            <div key={text} className="trust-promise-item">
+              <span className="trust-promise-icon">{icon}</span>
+              <span>{text}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── 30-DAY GUARANTEE ── */}
       <div className="guarantee-section">
         <div className="guarantee-badge">🛡️</div>
@@ -756,7 +1048,7 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
           <div className="scarcity-fire">🔥</div>
           <div className="scarcity-title">We Only Process 5 Orders Per Day</div>
           <div className="scarcity-sub">
-            Due to high demand, our dispatch team handles a maximum of 5 deliveries daily — so every order gets personal attention and proper packing. Today's slots are filling fast.
+            Our dispatch team handles a maximum of 5 deliveries daily — so every order gets personal attention and proper packing. Today's slots are filling fast.
           </div>
           <div className="slots-wrap">
             <div className="slots-label">
@@ -791,7 +1083,7 @@ export default function LandingPage({ whatsappNumber }: LandingPageProps) {
         <p className="order-intro-text">
           We limit to 5 orders per day so every customer gets personal attention. Lagos & Abuja: pay on delivery. Other states: pay before dispatch. 2,400+ Nigerians already powered up.
         </p>
-        <OrderForm whatsappNumber={whatsappNumber} onOrderPlaced={incrementSlot} slotsLeft={slotsLeft} />
+        <OrderForm whatsappNumber={whatsappNumber} onOrderPlaced={incrementSlot} slotsLeft={slotsLeft} variant={variant} />
       </div>
 
       {/* ── FAQ ── */}

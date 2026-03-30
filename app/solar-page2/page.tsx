@@ -1,4 +1,5 @@
 import LandingPage from "@components/solar/LandingPage"
+import FacebookPixel from "@components/solar/FacebookPixel"
 
 export const metadata = {
   title: "150W Solar Power Station — Never Be In Darkness Again | PowerVolt NG",
@@ -6,5 +7,10 @@ export const metadata = {
 }
 
 export default function Page2() {
-  return <LandingPage whatsappNumber="08129372857" />
+  return (
+    <>
+      <FacebookPixel pixelId={process.env.NEXT_PUBLIC_FB_PIXEL_ID!} />
+      <LandingPage whatsappNumber="08129372857" variant="B" />
+    </>
+  )
 }
