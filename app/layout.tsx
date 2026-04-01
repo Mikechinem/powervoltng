@@ -22,7 +22,6 @@ export const metadata: Metadata = {
     "facebook-domain-verification": "4a87svsj0nfwi1xx89jvak9x98odd0",
   },
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
