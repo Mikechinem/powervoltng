@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import OrderForm from "@components/solar/OrderForm"
+import ProductVideo from "@components/solar/ProductVideo"
 import { WHAT_IT_POWERS, FAQS, TESTIMONIALS } from "@components/solar/data"
 
 const HERO_SLIDES = [
@@ -150,9 +151,11 @@ function getBusinessDayKey(): string {
 interface LandingPageProps {
   whatsappNumber: string
   variant?: "A" | "B"
+  topVideo?: string
+  bottomVideo?: string
 }
 
-export default function LandingPage({ whatsappNumber, variant }: LandingPageProps) {
+export default function LandingPage({ whatsappNumber, variant, topVideo, bottomVideo }: LandingPageProps) {
   const [heroIndex, setHeroIndex] = useState(0)
   const [heroAnim, setHeroAnim] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -753,6 +756,9 @@ export default function LandingPage({ whatsappNumber, variant }: LandingPageProp
         </div>
       </section>
 
+      {/* ── TOP VIDEO (page 1 only) ── */}
+      {topVideo && <ProductVideo src={topVideo} />}
+
       {/* ── PAIN BAR ── */}
       <div className="pain-bar">
         <p className="pain-label">Sound familiar?</p>
@@ -829,6 +835,9 @@ export default function LandingPage({ whatsappNumber, variant }: LandingPageProp
           </div>
         ))}
       </div>
+
+      {/* ── TOP VIDEO (page 1 only) ── */}
+      {topVideo && <ProductVideo src={topVideo} />}
 
       {/* ── FREE SOCKET BONUS ── */}
       <div className="bonus-section">
@@ -1103,6 +1112,9 @@ export default function LandingPage({ whatsappNumber, variant }: LandingPageProp
           ))}
         </div>
       </section>
+
+      {/* ── BOTTOM VIDEO (page 2 only) ── */}
+      {bottomVideo && <ProductVideo src={bottomVideo} />}
 
       {/* ── FOOTER ── */}
       <footer className="footer">

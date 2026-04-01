@@ -10,7 +10,11 @@ export default function Page2() {
   return (
     <>
       <FacebookPixel pixelId={process.env.NEXT_PUBLIC_FB_PIXEL_ID!} />
-      <LandingPage whatsappNumber="08129372857" variant="B" />
+      <LandingPage
+        whatsappNumber="08129372857"
+        variant="B"
+        bottomVideo="https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/rusedescript.mp4?updatedAt=1774878797775"
+      />
     </>
   )
 }

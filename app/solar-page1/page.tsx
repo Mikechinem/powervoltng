@@ -1,4 +1,3 @@
-
 import LandingPage from "@components/solar/LandingPage"
 import FacebookPixel from "@components/solar/FacebookPixel"
 
@@ -11,7 +10,11 @@ export default function Page1() {
   return (
     <>
       <FacebookPixel pixelId={process.env.NEXT_PUBLIC_FB_PIXEL_ID!} />
-      <LandingPage whatsappNumber="09021000812" variant="A" />
+      <LandingPage
+        whatsappNumber="09021000812"
+        variant="A"
+        topVideo="https://ik.imagekit.io/j1e78ujalr/rechargablesolarbank/rusedescript.mp4?updatedAt=1774878797775"
+      />
     </>
   )
 }
